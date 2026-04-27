@@ -15,39 +15,21 @@ for r in range(0, 256, 8):
 print(f"Generated {len(FULL_COLOR_LIST)} colors for rendering.")
 
 
-def generate_tile_maze(width, height):
-    # Maze dimensions MUST be odd numbers (e.g., 21x21) to ensure 
-    # walls and paths alternate correctly and don't overlap edges.
-    width = width if width % 2 != 0 else width + 1
-    height = height if height % 2 != 0 else height + 1
-
-    # 1. Start with a solid block of walls (1s)
-    maze = np.ones((height, width), dtype=int)
-
-    def carve_path(r, c):
-        maze[r, c] = 0  # Mark current cell as a path (0)
-        
-        # Define the 4 directions. We jump TWO spaces at a time so we leave walls between paths.
-        directions = [(0, 2), (0, -2), (2, 0), (-2, 0)]
-        random.shuffle(directions) # Pick a random direction to dig
-        
-        for dr, dc in directions:
-            next_r, next_c = r + dr, c + dc
-            
-            # Check if the next cell is inside the grid and is currently a wall
-            if 0 < next_r < height-1 and 0 < next_c < width-1 and maze[next_r, next_c] == 1:
-                # Knock down the wall in between us and the target
-                maze[r + dr//2, c + dc//2] = 0
-                # Jump to the target and repeat!
-                carve_path(next_r, next_c)
-
-    # Start digging at coordinates (1, 1)
-    carve_path(1, 1)
-    
-    return maze
+def terrain_generator(width, height, wall_count=3):
+    # Create a 1920 x 1080 grid of 0s
+    terrain = [[0] * 1080 for _ in range(1920)]
+    for _ in range(wall_count):
+        ran_y =  random.randint(0, 1079)
+        for x in range(1920):
+            terrain[x][ran_y] = 1
+    for _ in range(wall_count):
+        ran_x =  random.randint(0, 1919)
+        for y in range(1080):
+            terrain[ran_x][y] = 1
+    return terrain
 
 class EntitySimulation:
-    def __init__(self, num_creatures = 0):
+    def __init__(self, num_creatures = 0, generated_terrain = None):
         # Initialize your simulation state here
         self.creature_list = []
         for _ in range(num_creatures):
@@ -58,7 +40,7 @@ class EntitySimulation:
             self.creature_list.append(creature)
 
         
-        self.maze = generate_tile_maze(60, 30)  # Generate a 21x21 maze
+        self.terrain = generated_terrain
 
 
 
@@ -69,19 +51,38 @@ class EntitySimulation:
             new_x = creature["position"][0] + creature["velocity"][0]
             new_y = creature["position"][1] + creature["velocity"][1]
             
+
             # Keep creatures within bounds of the screen
-            new_x = max(0, min(SCREEN_WIDTH, new_x))
-            new_y = max(0, min(SCREEN_HEIGHT, new_y))
+            new_x = max(0, min(SCREEN_WIDTH-1, new_x))
+            new_y = max(0, min(SCREEN_HEIGHT-1, new_y))
             
+            # Check for collisions with terrain (walls)
+            if self.terrain[int(new_x)][int(new_y)] == 1:
+                # If there's a wall, reverse velocity
+                creature["velocity"] = (-creature["velocity"][0], -creature["velocity"][1])
+            else:
+                # If no wall, update position
+                creature["position"] = (new_x, new_y)
+
             creature["position"] = (new_x, new_y)
 
 class EntityRenderer:
-    def __init__(self, num_creatures = 0):
+    def __init__(self, num_creatures = 0, generated_terrain = None):
         self.sprite_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
         for _ in range(num_creatures):
             sprite = arcade.SpriteCircle(radius=8, color=random.choice(FULL_COLOR_LIST))
             self.sprite_list.append(sprite)
+
+        for row in range(len(generated_terrain[0])):
+            for col in range(len(generated_terrain)):
+                if generated_terrain[col][row] == 1:
+                    wall_sprite = arcade.SpriteSolidColor(1, 1, arcade.color.WHITE)
+                    wall_sprite.center_x = col
+                    wall_sprite.center_y = row
+                    self.wall_list.append(wall_sprite)
+
+        # self.wall_list.draw()
 
     def draw(self, EntitySimulator):
         # Clear the sprite list
@@ -90,21 +91,6 @@ class EntityRenderer:
             sprite.center_x, sprite.center_y = creature["position"]
 
         self.sprite_list.draw()
-
-        # Draw maze walls
-        maze = EntitySimulator.maze
-        for row in range(maze.shape[0]):
-            for col in range(maze.shape[1]):
-                
-                # If it's a 1, it's a wall. Create a sprite!
-                if maze[row, col] == 1:
-                    wall_sprite = arcade.SpriteSolidColor(30, 30, arcade.color.SLATE_GRAY)
-                    
-                    # Calculate its X, Y coordinates
-                    wall_sprite.center_x = col * 30 + (30 / 2)
-                    wall_sprite.center_y = row * 30 + (30 / 2)
-                    
-                    self.wall_list.append(wall_sprite)
         self.wall_list.draw()
 
 class DryWorldOrchestrator(arcade.Window):
@@ -116,9 +102,9 @@ class DryWorldOrchestrator(arcade.Window):
                         draw_rate=1/TARGET_FPS)
         arcade.set_background_color(arcade.color.BLACK)
         
-
-        self.simulation = EntitySimulation(num_creatures=CREATURE_COUNT)
-        self.renderer = EntityRenderer(num_creatures=CREATURE_COUNT)
+        self.terrain = terrain_generator(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.simulation = EntitySimulation(num_creatures=CREATURE_COUNT, generated_terrain=self.terrain)
+        self.renderer = EntityRenderer(num_creatures=CREATURE_COUNT, generated_terrain=self.terrain)
 
     def on_update(self, delta_time: float):
         self.simulation.update(delta_time)
