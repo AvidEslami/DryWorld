@@ -14,7 +14,10 @@ def fitness_function(state):
 
 class ConvergenceExperiment(arcade.Window):
     def __init__(self):
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Convergence Experiment", resizable=False, style="borderless")
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Convergence Experiment", resizable=False, 
+                         style="borderless", 
+                         update_rate=1/144, 
+                         draw_rate=1/144)
         arcade.set_background_color(arcade.color.BLACK)
         self.cell = arcade.SpriteCircle(radius=20, color=arcade.color.GREEN)
         self.cell.center_x = SCREEN_WIDTH // 2
