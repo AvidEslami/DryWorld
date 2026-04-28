@@ -30,11 +30,20 @@ def terrain_generator(width, height, wall_count=3):
 
 class EntitySimulation:
     def __init__(self, num_creatures = 0, generated_terrain = None):
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        for row in range(len(generated_terrain[0])):
+            for col in range(len(generated_terrain)):
+                if generated_terrain[col][row] == 1:
+                    wall_sprite = arcade.SpriteSolidColor(1, 1, arcade.color.WHITE)
+                    wall_sprite.center_x = col
+                    wall_sprite.center_y = row
+                    self.wall_list.append(wall_sprite)
+
         # Initialize your simulation state here
         self.creature_list = []
         for _ in range(num_creatures):
             creature = {
-                "position": (np.random.uniform(0, SCREEN_WIDTH), np.random.uniform(0, SCREEN_HEIGHT)),
+                "position": (np.random.randint(0, SCREEN_WIDTH), np.random.randint(0, SCREEN_HEIGHT)),
                 "velocity": (np.random.choice([-1, 1]), np.random.choice([-1, 1]))
             }
             self.creature_list.append(creature)
@@ -53,23 +62,28 @@ class EntitySimulation:
             
 
             # Keep creatures within bounds of the screen
-            new_x = max(0, min(SCREEN_WIDTH-1, new_x))
-            new_y = max(0, min(SCREEN_HEIGHT-1, new_y))
+            new_x = int(max(0, min(SCREEN_WIDTH-1, new_x)))
+            new_y = int(max(0, min(SCREEN_HEIGHT-1, new_y)))
             
             # Check for collisions with terrain (walls)
-            if self.terrain[int(new_x)][int(new_y)] == 1:
-                # If there's a wall, reverse velocity
+            player_sprite = arcade.SpriteSolidColor(1, 1, arcade.color.WHITE)
+            # print(f"Creature at {creature['position']} moving to {(new_x, new_y)} with velocity {creature['velocity']}")
+            player_sprite.center_x = new_x
+            player_sprite.center_y = new_y
+            collision = arcade.check_for_collision_with_list(player_sprite, self.wall_list)
+            if collision:
+                # If there's a collision, reverse velocity
+                # print(f"Collision detected for creature at {creature['position']} moving to {(new_x, new_y)}. Reversing velocity.")
                 creature["velocity"] = (-creature["velocity"][0], -creature["velocity"][1])
             else:
-                # If no wall, update position
-                creature["position"] = (new_x, new_y)
+                creature["velocity"] = (creature["velocity"][0], creature["velocity"][1])
 
             creature["position"] = (new_x, new_y)
 
 class EntityRenderer:
     def __init__(self, num_creatures = 0, generated_terrain = None):
         self.sprite_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         for _ in range(num_creatures):
             sprite = arcade.SpriteCircle(radius=8, color=random.choice(FULL_COLOR_LIST))
             self.sprite_list.append(sprite)
