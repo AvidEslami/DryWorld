@@ -42,7 +42,7 @@ def exact_pixel_bot():
                 for y in range(region["height"]):
 
                     r, g, b = img.pixel(x, y)
-                    print(f"Scanned color: ({r}, {g}, {b})")
+                    # print(f"Scanned color: ({r}, {g}, {b})")
                     # Check if the colors match
                     if (abs(r - TARGET_R) <= TOLERANCE and 
                         abs(g - TARGET_G) <= TOLERANCE and 
@@ -50,7 +50,7 @@ def exact_pixel_bot():
                         
                         print(f"Found color ({r}, {g}, {b})! Right-clicking.")
                         pyautogui.rightClick()
-                        time.sleep(1.5) # Sleep for a second so it doesn't click multiple times immediately
+                        time.sleep(1) # Sleep for a second so it doesn't click multiple times immediately
                         pyautogui.rightClick()
                         # Sleep for a second so it doesn't
                     elif (abs(r - SECOND_TARGET_R) <= TOLERANCE and 
@@ -59,7 +59,7 @@ def exact_pixel_bot():
                         
                         print(f"Found color ({r}, {g}, {b})! Right-clicking.")
                         pyautogui.rightClick()
-                        time.sleep(1.5) # Sleep for a second so it doesn't click multiple times immediately
+                        time.sleep(1) # Sleep for a second so it doesn't click multiple times immediately
                         pyautogui.rightClick()
                         # Sleep for a second so it doesn't
                     elif (abs(r - THIRD_TARGET_R) <= TOLERANCE and
@@ -68,9 +68,11 @@ def exact_pixel_bot():
                         
                         print(f"Found color ({r}, {g}, {b})! Right-clicking.")
                         pyautogui.rightClick()
-                        time.sleep(1.5) # Sleep for a second so it doesn't click multiple times immediately
+                        time.sleep(1) # Sleep for a second so it doesn't click multiple times immediately
                         pyautogui.rightClick()
                         # Sleep for a second so it doesn't
+                    # sleep briefly to minimize cpu strain
+            time.sleep(0.1)
 
 if "__main__" == __name__:
     exact_pixel_bot()
