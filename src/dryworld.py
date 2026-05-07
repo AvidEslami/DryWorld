@@ -26,6 +26,14 @@ def terrain_generator(width, height, wall_count=3):
         ran_x =  random.randint(0, 1919)
         for y in range(1080):
             terrain[ran_x][y] = 1
+
+    # Lastly make the perimeter walls as well
+    for x in range(1920):
+        terrain[x][1] = 1
+        terrain[x][1079] = 1
+    for y in range(1080):
+        terrain[1][y] = 1
+        terrain[1919][y] = 1
     return terrain
 
 class EntitySimulation:
